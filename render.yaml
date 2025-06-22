@@ -2,6 +2,7 @@ services:
   - type: web
     name: billiards-club
     runtime: docker
+    dockerfilePath: ./Dockerfile
     repo: https://github.com/kdimcmxcix/billiards_club_tuan_hung
     branch: main
     plan: free
