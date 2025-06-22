@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Dashboard - Billiards Club Tuấn Hùng</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+    <!-- FontAwesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="./index.css">
+
+    <!-- jQuery (phải đặt trước Bootstrap JS) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Bootstrap Bundle JS (gồm cả Popper + Modal support) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Day.js & Plugins -->
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/utc.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/timezone.js"></script>
+    <script>
+        dayjs.extend(dayjs_plugin_utc);
+        dayjs.extend(dayjs_plugin_timezone);
+    </script>
+</head>
+
+
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand me-5" href="#">
+                <div class="brand-logo">
+                    <img src="./img/bidaTuanHung.png" alt="">
+                </div>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-3 w-100 justify-content-between">
+                    <li class="nav-item">
+                        <a id="link-revenue-statistics" class="nav-link active" href="#"><i
+                                class="fa-solid fa-chart-simple"></i> Tổng quan</a>
+                    </li>
+                    <li class="nav-item">
+                        <a id="link-booking" class="nav-link" href="#"><i class="fas fa-table"></i> Phòng/Bàn</a>
+                    </li>
+                    <li class="nav-item">
+                        <a id="link-products-management" class="nav-link" href="#"><i class="fa-solid fa-cube"></i> Hàng
+                            hóa</a>
+                    </li>
+                    <li class="nav-item">
+                        <a id="link-store-fund" class="nav-link" href="#"><i class="fas fa-wallet"></i> Quỹ cửa hàng</a>
+                    </li>
+                </ul>
+            </div>
+            <div id="logged-in-user" class="navbar-logged-in ms-5">
+                <div class="user-circle-wrapper">
+                    <div class="user-img-circle">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <div class="user-dropdown-menu d-none">
+                        <ul>
+                            <span id="logged-username"></span>
+                            <li id="log-out-div">
+                                <i class="fa-solid fa-right-from-bracket"></i>
+                                <span>Đăng xuất</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <!-- DOANH THU -->
+    <section id="revenue-statistics-div">
+        <!-- Biểu đồ doanh thu theo ngày -->
+        <div class="container py-4">
+            <h4 class="mb-3">Thống kê doanh thu theo ngày</h4>
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <label for="fromDate" class="form-label">Từ ngày</label>
+                    <input type="date" id="fromDate" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                    <label for="toDate" class="form-label">Đến ngày</label>
+                    <input type="date" id="toDate" class="form-control" />
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button class="btn btn-primary w-100" id="loadChartBtn">Xem thống kê</button>
+                </div>
+            </div>
+            <canvas id="revenueChart" height="100"></canvas>
+        </div>
+        <!-- Đơn hàng hôm nay -->
+        <div class="container bg-white py-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">Đơn hàng ngày <span id="currentDateDisplay"></span></h4>
+                <div>
+                    <button class="btn btn-outline-primary me-2" id="prevDateBtn"><i class="fa-solid fa-arrow-left"></i>
+                        Ngày trước</button>
+                    <button class="btn btn-outline-primary" id="nextDateBtn">Ngày sau <i
+                            class="fa-solid fa-arrow-right"></i></button>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Bàn</th>
+                            <th>Bắt đầu</th>
+                            <th>Kết thúc</th>
+                            <th>Thanh toán</th>
+                            <th>Tổng tiền (VND)</th>
+                            <th>Chi tiết</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orderListBody">
+                        <!-- data here -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="mt-2">
+                <strong>Tổng doanh thu:</strong> <span id="totalRevenueToday">0 đ</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- MỞ BÀN -->
+    <section id="booking-div" class="d-none">
+        <div class="container bg-white py-4">
+            <div class="row g-4" id="table-list">
+            </div>
+            <div id="table-detail-panel" class="mt-4 p-3 border rounded bg-light">
+                <p>Click vào bàn để xem chi tiết.</p>
+            </div>
+            <div id="menu-order-panel" class="mt-4 p-3 border rounded bg-light">
+                <h5>Menu gọi món</h5>
+                <div id="menu-item-list" class="row g-3"></div>
+                <div class="mt-3">
+                    <button class="btn btn-success" id="confirmAddMenuBtn">
+                        <i class="fa-solid fa-plus"></i> Thêm vào đơn
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quản lý hàng -->
+    <section id="itemsManagmentDiv" class="d-none">
+        <div class="container bg-white py-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">Quản lý hàng hóa / Món</h4>
+                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#menuItemModal">
+                    <i class="fa fa-plus"></i> Thêm món mới
+                </button>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-bordered text-center">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tên món</th>
+                            <th>Loại</th>
+                            <th>Giá (VND)</th>
+                            <th>Số luợng</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="menuItemListBody">
+                        <!-- Data load here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- QUẢN LÝ QUỸ -->
+    <section id="store-fund-div" class="d-none">
+        <div class="container bg-white py-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">Quản lý quỹ tiền mặt của cửa hàng</h4>
+                <div>
+                    <button class="btn btn-primary me-2" id="refreshSessionsBtn">
+                        <i class="fa-solid fa-rotate"></i> Tải lại
+                    </button>
+                    <button class="btn btn-outline-success" id="exportExcelBtn">
+                        <i class="fa-solid fa-file-excel"></i> Xuất Excel
+                    </button>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label for="initialCashInput" class="form-label">Tiền quỹ ban đầu (VND)</label>
+                <input type="number" class="form-control" id="initialCashInput" placeholder="Nhập số tiền ban đầu..."
+                    min="0">
+            </div>
+            <button class="btn btn-success mb-3" id="updateInitialCashBtn">
+                <i class="fa-solid fa-play"></i> Cập nhật tiền đầu phiên
+            </button>
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Nhân viên</th>
+                            <th>Giờ bắt đầu</th>
+                            <th>Giờ kết thúc</th>
+                            <th>Tiền trong phiên đăng nhập (VND)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="workingSessionTableBody">
+                        <!-- Data render here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-3">
+                <strong>Tổng quỹ: </strong><span id="totalFundAmount">0 đ</span>
+            </div>
+        </div>
+        <nav>
+            <ul class="pagination justify-content-center mt-3" id="pagination"></ul>
+        </nav>
+    </section>
+
+    <!-- Modal Thêm / Sửa Món -->
+    <div class="modal fade" id="menuItemModal" tabindex="-1" aria-labelledby="menuItemModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="menuItemModalLabel">Thêm / Chỉnh sửa Món</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="menuItemForm">
+                        <input type="hidden" id="menuItemId">
+                        <div class="mb-3">
+                            <label class="form-label">Tên món</label>
+                            <input type="text" class="form-control" id="menuItemName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Loại</label>
+                            <select name="" id="menuItemCategory" class="form-control">
+                                <option value="Nước">Nước</option>
+                                <option value="Đồ ăn">Đồ ăn</option>
+                                <option value="Thuốc">Thuốc</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Giá (VND)</label>
+                            <input type="number" class="form-control" id="menuItemPrice" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Số lượng nhập</label>
+                            <input type="number" class="form-control" id="menuItemQuantity" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary" id="saveMenuItemBtn">Lưu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Xác Nhận Tính Tiền -->
+    <div class="modal fade" id="confirmPaymentModal" tabindex="-1" aria-labelledby="confirmPaymentModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered"> <!-- centered -->
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="confirmPaymentModalLabel">💵 Xác nhận tính tiền bàn</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Đóng"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="paymentMethodSelect" class="form-label"><strong>Phương thức thanh
+                                toán:</strong></label>
+                        <select class="form-select" id="paymentMethodSelect">
+                            <option value="cash">💵 Tiền mặt</option>
+                            <option value="momo">📱 Momo</option>
+                            <option value="banking">🏦 Chuyển khoản</option>
+                        </select>
+                    </div>
+                    <div id="payment-summary"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Quay lại</button>
+                    <button type="button" class="btn btn-success" id="confirmFinishBtn">Xác nhận tính tiền</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Toast Container -->
+    <div id="toast-container" class="position-fixed bottom-0 end-0 p-3" style="z-index: 9999"></div>
+
+</body>
+<script>
+    /*** REGION 1 - Global variables - Vùng khai báo biến, hằng số, tham số TOÀN CỤC */
+    let revenueChart;
+    let currentDay = new Date();
+    const token = localStorage.getItem("token");
+    let selectedTableId = null;
+    let playingTimerInterval = null;
+    const pageSize = 5;
+    let currentPage = 0;
+
+    /*** REGION 2 - Vùng gán / thực thi sự kiện cho các elements */
+    $(document).ready(function () {
+        $("#exportExcelBtn").click(function () {
+            fetch("http://localhost:8080/api/working-session/export")
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("Xuất Excel thất bại");
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    const url = window.URL.createObjectURL(new Blob([blob]));
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = "working_sessions.xlsx";
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                })
+                .catch(error => {
+                    showToastError("Lỗi khi xuất file Excel: " + error.message);
+                });
+        });
+
+        $("#log-out-div").on("click", function () {
+            const staffId = localStorage.getItem("staffId");
+
+            if (!staffId) {
+                // Không có staff -> xóa luôn và về login
+                localStorage.removeItem("token");
+                localStorage.removeItem("staffId");
+                window.location.href = "login.html";
+                return;
+            }
+
+            // B1: Tìm phiên đang mở
+            $.ajax({
+                url: `http://localhost:8080/api/working-session/staff/${staffId}`,
+                method: 'GET',
+                success: function (sessions) {
+                    const activeSession = sessions.find(s => s.endTime == null);
+
+                    if (!activeSession) {
+                        doLogout();
+                        return;
+                    }
+
+                    // B2: Đóng ca = cập nhật endTime
+                    const now = new Date().toISOString();
+
+                    $.ajax({
+                        url: `http://localhost:8080/api/working-session/${activeSession.id}`,
+                        method: 'PUT',
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            id: activeSession.id,
+                            startTime: activeSession.startTime,
+                            endTime: now,
+                            cashInSession: activeSession.cashInSession,
+                            staff: { id: staffId }
+                        }),
+                        success: function () {
+                            doLogout();
+                        },
+                        error: function () {
+                            showToastError('Lỗi khi đóng ca làm việc!');
+                            doLogout(); // vẫn cho logout nếu thất bại
+                        }
+                    });
+                },
+                error: function () {
+                    doLogout(); // nếu không gọi được API thì vẫn logout
+                }
+            });
+
+            function doLogout() {
+                localStorage.removeItem("token");
+                localStorage.removeItem("staffId");
+                window.location.href = "login.html";
+            }
+        });
+
+
+        loadMenuItemManagement();
+        loadWorkingSessions(currentPage);
+
+        $('#refreshSessionsBtn').click(() => {
+            loadWorkingSessions(currentPage);
+        });
+
+        if (!token) {
+            showToastError("Hết phiên đăng nhập!");
+            window.location.href = "login.html";
+            return;
+        }
+
+        // Lấy thông tin người dùng
+        $.ajax({
+            url: "http://localhost:8080/api/auth/me",
+            type: "GET",
+            headers: {
+                "Authorization": token
+            },
+            success: function (res) {
+                $("#logged-username").html("Tài khoản: " + res.username);
+                localStorage.setItem("staffId", res.id);
+
+                $.ajax({
+                    url: "http://localhost:8080/api/working-session/start",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({ staffId: res.id }),
+                    headers: { Authorization: token }
+                });
+            },
+            error: function () {
+                window.location.href = "login.html";
+            }
+        });
+
+        // Toggle dropdown khi click avatar
+        $(".user-img-circle").on("click", function (e) {
+            e.stopPropagation();
+            $(".user-dropdown-menu").toggleClass("d-none");
+        });
+
+        // Click ngoài dropdown để ẩn
+        $(document).on("click", function (e) {
+            if (!$(e.target).closest('.user-dropdown-menu').length &&
+                !$(e.target).closest('.user-img-circle').length) {
+                $(".user-dropdown-menu").addClass("d-none");
+            }
+        });
+
+        // Xem chi tiết đơn hàng
+        $(document).on("click", ".fa-eye", function () {
+            const detailId = $(this).data("target");
+            $(`#${detailId}`).toggleClass("d-none");
+        });
+
+        // Nút lọc biểu đồ
+        $("#loadChartBtn").click(fetchRevenueData);
+
+        // Nút lùi ngày
+        $("#prevDateBtn").click(() => {
+            currentDay.setDate(currentDay.getDate() - 1);
+            loadTodayOrders();
+        });
+
+        // Nút tiến ngày
+        $("#nextDateBtn").click(() => {
+            currentDay.setDate(currentDay.getDate() + 1);
+            loadTodayOrders();
+        });
+
+        // Giao diện chuyển tab
+        $("#link-revenue-statistics").on("click", function () {
+            $(this).addClass("active");
+            $("#link-booking").removeClass("active");
+            $("#link-products-management").removeClass("active");
+            $("#link-store-fund").removeClass("active");
+            $("#revenue-statistics-div").removeClass("d-none");
+            $("#booking-div").addClass("d-none");
+            $("#itemsManagmentDiv").addClass("d-none");
+            $("#store-fund-div").addClass("d-none");
+        });
+
+        $("#link-booking").on("click", function () {
+            $(this).addClass("active");
+            $("#link-revenue-statistics").removeClass("active");
+            $("#link-products-management").removeClass("active");
+            $("#link-store-fund").removeClass("active");
+            $("#booking-div").removeClass("d-none");
+            $("#revenue-statistics-div").addClass("d-none");
+            $("#itemsManagmentDiv").addClass("d-none");
+            $("#store-fund-div").addClass("d-none");
+        });
+
+        $("#link-products-management").on("click", function () {
+            $(this).addClass("active");
+            $("#link-revenue-statistics").removeClass("active");
+            $("#link-booking").removeClass("active");
+            $("#link-store-fund").removeClass("active");
+            $("#booking-div").addClass("d-none");
+            $("#revenue-statistics-div").addClass("d-none");
+            $("#itemsManagmentDiv").removeClass("d-none");
+            $("#store-fund-div").addClass("d-none");
+        });
+
+        $("#link-store-fund").on("click", function () {
+            $(this).addClass("active");
+            $("#link-revenue-statistics").removeClass("active");
+            $("#link-booking").removeClass("active");
+            $("#link-products-management").removeClass("active");
+            $("#booking-div").addClass("d-none");
+            $("#revenue-statistics-div").addClass("d-none");
+            $("#itemsManagmentDiv").addClass("d-none");
+            $("#store-fund-div").removeClass("d-none");
+        });
+
+        // Gán ngày mặc định và load dữ liệu ban đầu
+        const todayStr = formatDate(new Date());
+        $("#fromDate").val(todayStr);
+        $("#toDate").val(todayStr);
+        fetchRevenueData();
+        loadTodayOrders();
+
+        //Load bàn chơi
+        loadTables();
+        loadMenuItems();
+
+        $(document).on("click", ".table-card", function () {
+            const tableId = $(this).data("id");
+
+            // Bỏ màu vàng bàn cũ
+            $(".table-card").removeClass("selected-table");
+
+            // Đánh dấu bàn đang được chọn
+            $(this).addClass("selected-table");
+            selectedTableId = tableId;
+
+            // Hiển thị thông tin chi tiết
+            fetchTableDetails(tableId);
+        });
+
+        $("#confirmAddMenuBtn").on("click", function () {
+            if (!selectedTableId) {
+                showToastError("Vui lòng chọn bàn trước.");
+                return;
+            }
+
+            // Lấy đơn chưa thanh toán của bàn
+            $.ajax({
+                url: `http://localhost:8080/api/order/table/${selectedTableId}/unpaid`,
+                type: "GET",
+                headers: { Authorization: token },
+                success: function (order) {
+                    if (!order || !order.id) {
+                        showToastError("Bàn chưa có đơn để thêm món!");
+                        return;
+                    }
+
+                    const orderId = order.id;
+                    const selectedItems = [];
+
+                    $(".menu-item-card").each(function () {
+                        const quantity = parseInt($(this).find(".quantity-input").val());
+                        if (quantity > 0) {
+                            const menuItemId = $(this).data("id");
+                            selectedItems.push({
+                                order: { id: orderId },
+                                menuItem: { id: menuItemId },
+                                quantity: quantity
+                            });
+
+                        }
+                    });
+
+                    if (selectedItems.length === 0) {
+                        showToastError("Chưa chọn món nào để thêm!");
+                        return;
+                    }
+
+                    // Gọi API thêm từng món vào đơn
+                    const requests = selectedItems.map(item => {
+                        return $.ajax({
+                            url: "http://localhost:8080/api/order-item",
+                            type: "POST",
+                            headers: { Authorization: token },
+                            contentType: "application/json",
+                            data: JSON.stringify(item),
+                        });
+                    });
+
+                    Promise.all(requests)
+                        .then(() => {
+                            showToastSuccess("Đã thêm món thành công!");
+                            fetchTableDetails(selectedTableId); // Reload lại chi tiết bàn
+                        })
+                        .catch(() => {
+                            showToastError("Có lỗi khi thêm món!");
+                        });
+                },
+                error: function () {
+                    showToastError("Không thể lấy đơn của bàn này.");
+                }
+            });
+        });
+
+        $(document).on("click", "#endTableBtn", function () {
+            if (!selectedTableId) return;
+
+            $.ajax({
+                url: `http://localhost:8080/api/order/table/${selectedTableId}/unpaid/total`,
+                type: "GET",
+                headers: { Authorization: token },
+                success: function (data) {
+                    if (!data) {
+                        showToastError("Không tìm thấy đơn chưa thanh toán.");
+                        return;
+                    }
+
+                    const order = data.order;
+                    const items = order.orderItems || [];
+                    const tableName = order.billiardsTable?.tableName || "Không rõ";
+                    const hours = getPlayedHours(order.startTime, order.endTime || new Date().toISOString());
+                    const playingFeePerHour = order.billiardsTable?.pricePerHour || 0;
+                    const totalAmount = data.totalAmount || 0;
+
+                    let html = `
+                    <div class="container">
+                        <div class="row mb-3">
+                            <div class="col-sm-12">
+                                <h5><i class="fa-solid fa-table"></i> Bàn: ${tableName}</h5>
+                            </div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-sm-8">
+                                <strong><i class="fa-solid fa-stopwatch"></i> Giá chơi:</strong> ${hours} giờ x ${playingFeePerHour.toLocaleString("vi-VN")} đ
+                            </div>
+                            <div class="col-sm-4 text-end">
+                                <strong>${data.playingFee.toLocaleString("vi-VN")} đ</strong>
+                            </div>
+                        </div>
+                    `;
+
+                    // Món ăn
+                    if (items.length > 0) {
+                        html += `
+                        <div class="row mb-2">
+                            <div class="col-sm-12">
+                                <strong><i class="fa-solid fa-utensils"></i> Món đã gọi:</strong>
+                            </div>
+                        </div>`;
+
+                        items.forEach(i => {
+                            html += `
+                            <div class="row mb-1">
+                                <div class="col-sm-8">${i.menuItem?.name || "Tên không rõ"} x${i.quantity}</div>
+                                <div class="col-sm-4 text-end">${(i.quantity * i.unitPrice).toLocaleString("vi-VN")} đ</div>
+                            </div>`;
+                        });
+                    } else {
+                        html += `
+                        <div class="row mb-2">
+                            <div class="col-sm-12 text-muted">Không có món nào</div>
+                        </div>`;
+                    }
+
+                    html += `
+                        <hr/>
+                        <div class="row">
+                            <div class="col-sm-8 text-end"><strong>Tổng cộng:</strong></div>
+                            <div class="col-sm-4 text-end text-danger fw-bold fs-5">${totalAmount.toLocaleString("vi-VN")} đ</div>
+                        </div>
+                    </div>
+                    `;
+
+                    $("#payment-summary").html(html);
+                    $("#confirmPaymentModal").modal("show");
+                    $("#confirmFinishBtn").data("order-id", order.id);
+                },
+                error: function () {
+                    showToastError("Không thể lấy thông tin thanh toán.");
+                }
+            });
+        });
+
+        $("#confirmFinishBtn").on("click", function () {
+            const orderId = $(this).data("order-id");
+            const paymentMethod = $("#paymentMethodSelect").val();
+            const staffId = localStorage.getItem("staffId");
+
+            if (!paymentMethod) {
+                showToastError("Vui lòng chọn phương thức thanh toán.");
+                return;
+            }
+
+            if (!staffId) {
+                showToastError("Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại.");
+                return;
+            }
+
+            // Tạo ISO datetime KHÔNG có 'Z'
+            const endTime = new Date(Date.now() - new Date().getTimezoneOffset() * 60000)
+                .toISOString().slice(0, 19); // Ví dụ: "2025-06-22T17:45:30"
+
+            $.ajax({
+                url: `http://localhost:8080/api/order/${orderId}/finish?endTime=${encodeURIComponent(endTime)}&paymentMethod=${paymentMethod}&staffId=${staffId}`,
+                method: "PUT",
+                headers: { Authorization: token },
+                success: function () {
+                    showToastSuccess("Đã thanh toán và kết thúc bàn!");
+                    $("#confirmPaymentModal").modal("hide");
+                    loadTables();
+                    fetchTableDetails(selectedTableId);
+                },
+                error: function (xhr) {
+                    showToastError("Có lỗi khi kết thúc đơn hàng! " + xhr.responseText);
+                }
+            });
+        });
+
+        // Mở modal thêm món mới
+        $("#btnAddItem").click(() => {
+            $("#menuItemModal .modal-title").text("Thêm món mới");
+            $("#menuItemId").val("");
+            $("#menuItemName").val("");
+            $("#menuItemCategory").val("");
+            $("#menuItemPrice").val("");
+            $("#menuItemQuantity").val("");
+            $("#menuItemModal").modal("show");
+        });
+
+        // Lưu món (thêm hoặc cập nhật)
+        $("#saveMenuItemBtn").click(() => {
+            const id = $("#menuItemId").val();
+            const name = $("#menuItemName").val().trim();
+            const category = $("#menuItemCategory").val();
+            const price = parseFloat($("#menuItemPrice").val());
+            const stockQuantity = parseInt($("#menuItemQuantity").val());
+
+            if (!name || !category || isNaN(price) || isNaN(stockQuantity) || price < 0 || stockQuantity < 0) {
+                showToastError("Vui lòng nhập đầy đủ và hợp lệ.");
+                return;
+            }
+
+            const itemData = { name, category, price, stockQuantity };
+            const url = id
+                ? `http://localhost:8080/api/menu-item/${id}`
+                : `http://localhost:8080/api/menu-item`;
+            const method = id ? "PUT" : "POST";
+
+            $.ajax({
+                url,
+                method,
+                headers: {
+                    Authorization: token,
+                    "Content-Type": "application/json"
+                },
+                data: JSON.stringify(itemData),
+                success: () => {
+                    $("#menuItemModal").modal("hide");
+                    loadMenuItemManagement();
+                },
+                error: function (xhr) {
+                    if (xhr.status === 409) {
+                        showToastError("Tên món đã tồn tại.");
+                    } else {
+                        showToastError("Có lỗi xảy ra khi lưu món.");
+                    }
+                }
+            });
+        });
+
+        // Bấm sửa
+        $(document).on("click", ".editItemBtn", function () {
+            const id = $(this).data("id");
+            $.ajax({
+                url: `http://localhost:8080/api/menu-item/${id}`,
+                method: "GET",
+                headers: { Authorization: token },
+                success: function (item) {
+                    $("#menuItemModal .modal-title").text("Chỉnh sửa món");
+                    $("#menuItemId").val(item.id);
+                    $("#menuItemName").val(item.name);
+                    $("#menuItemCategory").val(item.category);
+                    $("#menuItemPrice").val(item.price);
+                    $("#menuItemQuantity").val(item.stockQuantity); // ✅ hiển thị đúng số lượng
+                    $("#menuItemModal").modal("show");
+                },
+                error: function () {
+                    showToastError("Không lấy được thông tin món.");
+                }
+            });
+        });
+
+        // Bấm sửa
+        $(document).on("click", ".editItemBtn", function () {
+            const id = $(this).data("id");
+            $.ajax({
+                url: `http://localhost:8080/api/menu-item/${id}`,
+                method: "GET",
+                headers: { Authorization: token },
+                success: function (item) {
+                    $("#menuItemModal .modal-title").text("Chỉnh sửa món");
+                    $("#menuItemId").val(item.id);
+                    $("#menuItemName").val(item.name);
+                    $("#menuItemCategory").val(item.category);
+                    $("#menuItemPrice").val(item.price);
+                    $("#menuItemQuantity").val(item.stockQuantity); // ✅ hiển thị đúng số lượng
+                    $("#menuItemModal").modal("show");
+                },
+                error: function () {
+                    showToastError("Không lấy được thông tin món.");
+                }
+            });
+        });
+
+        // Bấm xóa
+        $(document).on("click", ".deleteItemBtn", function () {
+            const id = $(this).data("id");
+            if (confirm("Bạn có chắc muốn xóa món này?")) {
+                $.ajax({
+                    url: `http://localhost:8080/api/menu-item/${id}`,
+                    method: "DELETE",
+                    headers: { Authorization: token },
+                    success: function () {
+                        loadMenuItemManagement();
+                        $("#menuItemModal").modal("hide");
+                    },
+                    error: function () {
+                        showToastError("Không xóa được món.");
+                    }
+                });
+            }
+        });
+
+        $('#updateInitialCashBtn').click(function () {
+            const staffId = localStorage.getItem('staffId');
+            const cash = parseFloat($('#initialCashInput').val()) || 0;
+
+            if (!staffId) {
+                showToastError('Không tìm thấy ID nhân viên!');
+                return;
+            }
+
+            // B1: Lấy các phiên làm việc của nhân viên
+            $.ajax({
+                url: `http://localhost:8080/api/working-session/staff/${staffId}`,
+                method: 'GET',
+                success: function (sessions) {
+                    const activeSession = sessions.find(s => s.endTime == null);
+
+                    if (!activeSession) {
+                        showToastError('Không có phiên đang hoạt động!');
+                        return;
+                    }
+
+                    // B2: Cộng dồn tiền
+                    const updatedCash = activeSession.cashInSession + cash;
+
+                    // B3: Gửi PUT để cập nhật tiền
+                    $.ajax({
+                        url: `http://localhost:8080/api/working-session/${activeSession.id}`,
+                        method: 'PUT',
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            id: activeSession.id,
+                            startTime: activeSession.startTime,
+                            endTime: null,
+                            cashInSession: updatedCash,
+                            staff: { id: staffId }
+                        }),
+                        success: function () {
+                            showToastSuccess('Đã cộng thêm ' + formatCurrency(cash) + ' vào phiên làm việc.');
+                            $('#initialCashInput').val('');
+                            loadWorkingSessions(0);
+                        },
+                        error: function () {
+                            showToastError('Lỗi khi cập nhật tiền quỹ.');
+                        }
+                    });
+                },
+                error: function () {
+                    showToastError('Không thể lấy thông tin phiên làm việc.');
+                }
+            });
+        });
+
+    });
+
+    /*** REGION 3 - Event handlers - Vùng khai báo các hàm xử lý sự kiện */
+    function fetchRevenueData() {
+        const from = $("#fromDate").val();
+        const to = $("#toDate").val();
+
+        $.ajax({
+            url: `http://localhost:8080/api/report/revenue?type=date&from=${from}&to=${to}`,
+            type: "GET",
+            headers: { Authorization: token },
+            success: function (res) {
+                const labels = res.map(item => item.label);
+                const data = res.map(item => item.revenue);
+                renderChart(labels, data);
+            },
+            error: function () {
+                showToastError("Không thể tải dữ liệu doanh thu!");
+            },
+        });
+    }
+
+    function loadTodayOrders() {
+        const dateStr = formatDate(currentDay);
+        $("#currentDateDisplay").text(formatDisplayDate(dateStr));
+
+        $.ajax({
+            url: `http://localhost:8080/api/report/orders/by-date?date=${dateStr}`,
+            type: "GET",
+            headers: { Authorization: token },
+            success: function (orders) {
+                let rows = "";
+                let total = 0;
+                orders.forEach(o => {
+                    const detailId = `detail-${o.id}`;
+                    rows += `
+                    <tr>
+                        <td>${o.id}</td>
+                        <td>${o.billiardsTableName}</td>
+                        <td>${formatDisplayDateWithTime(o.startTime)}</td>
+                        <td>${formatDisplayDateWithTime(o.endTime)}</td>
+                        <td>${o.paymentMethod}</td>
+                        <td>${o.totalAmount.toLocaleString("vi-VN")} đ</td>
+                        <td>
+                            <i class="fa-solid fa-eye text-primary" role="button"
+                            title="Xem chi tiết" data-target="${detailId}"></i>
+                        </td>
+                    </tr>
+                    <tr id="${detailId}" class="d-none bg-light">
+                        <td colspan="7">
+                            <strong>Chi tiết đơn hàng:</strong>
+                            <ul class="mb-0">
+                                ${(o.items || []).map(i => `
+                                    <li>${i.name} x${i.quantity} = ${(i.unitPrice * i.quantity).toLocaleString("vi-VN")} đ</li>
+                                `).join("")}
+                                <li><strong>Giá chơi :</strong> ${getPlayedHours(o.startTime, o.endTime)} giờ = ${o.playingFee.toLocaleString("vi-VN")} đ</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    `;
+                    total += o.totalAmount;
+                });
+                $("#orderListBody").html(rows);
+                $("#totalRevenueToday").text(total.toLocaleString("vi-VN") + " đ");
+            },
+            error: function () {
+                showToastError("Không thể tải danh sách đơn hàng!");
+            }
+        });
+    }
+
+    function loadTables() {
+        $.ajax({
+            url: "http://localhost:8080/api/billiards-table",
+            type: "GET",
+            headers: { Authorization: token },
+            success: function (tables) {
+                let html = "";
+                tables.forEach(t => {
+                    const isInUse = t.inUse ? 'inUsed' : '';
+                    const statusText = t.inUse ? `<span class="status-text">Đang sử dụng</span>` : '';
+                    html += `
+                        <div class="col-md-4">
+                            <div class="table-card ${isInUse}" data-id="${t.id}">
+                                ${t.tableName}
+                                <br />
+                                <span style="font-size: 14px; font-weight: normal; color: #555;">
+                                    ${t.pricePerHour.toLocaleString("vi-VN")} đ / giờ
+                                </span>
+                                ${statusText}
+                            </div>
+                        </div>
+                    `;
+                });
+                $("#table-list").html(html);
+            },
+            error: function () {
+                showToastError("Không thể tải danh sách bàn!");
+            }
+        });
+    }
+
+    function fetchTableDetails(tableId) {
+        $.ajax({
+            url: `http://localhost:8080/api/order/table/${tableId}/unpaid`,
+            type: "GET",
+            headers: { Authorization: token },
+            success: function (order) {
+                if (!order || !order.id) {
+                    const emptyHtml = `
+                    <h5>Bàn chưa có đơn nào.</h5>
+                    <button class="btn btn-primary" id="openTableBtn">
+                        <i class="fa-solid fa-play"></i>&nbsp; Bắt đầu mở bàn
+                    </button>
+                `;
+                    $("#table-detail-panel").html(emptyHtml);
+
+                    $("#openTableBtn").on("click", function () {
+                        const staffId = localStorage.getItem("staffId");
+                        const now = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString();
+
+                        $.ajax({
+                            url: "http://localhost:8080/api/order",
+                            type: "POST",
+                            headers: { Authorization: token },
+                            contentType: "application/json",
+                            data: JSON.stringify({
+                                billiardsTable: { id: tableId },
+                                staff: { id: parseInt(staffId) },
+                                startTime: now,
+                                createdAt: now,
+                                isPaid: false,
+                                orderItems: []
+                            }),
+                            success: function () {
+                                showToastSuccess("Bàn đã được mở!");
+                                fetchTableDetails(tableId);
+                                loadTables();
+                            },
+                            error: function () {
+                                showToastError("Không thể mở bàn mới!");
+                            }
+                        });
+                    });
+                    return;
+                }
+
+                const startTime = dayjs(order.startTime);
+                const startTimeFormatted = startTime.format("HH:mm:ss - DD/MM/YYYY");
+
+                $.ajax({
+                    url: `http://localhost:8080/api/order-item/order/${order.id}`,
+                    type: "GET",
+                    headers: { Authorization: token },
+                    success: function (items) {
+                        const foodList = items.map(i => {
+                            const name = i.name || i.menuItem?.name || "Tên không rõ";
+                            return `
+
+                            <li data-order-item-id="${i.id}" class="d-flex mb-2" style="gap:15px;">
+                                <div class="d-flex" style="gap:5px;">
+                                    ${name} x<span class="quantity">${i.quantity}</span>
+                                </div>
+                                <div class="d-flex" style="gap:5px;">
+                                    <button class="btn btn-sm btn-outline-secondary btn-increase">+</button>
+                                    <button class="btn btn-sm btn-outline-secondary btn-decrease">-</button>
+                                    <button class="btn btn-sm btn-outline-danger btn-remove">🗑</button>
+                                </div>
+                            </li>
+                        `;
+                        }).join("");
+
+                        const detailHtml = `
+                        <h5>Bàn: ${order.billiardsTable?.tableName || "Lỗi hiển thị"}</h5>
+                        <p><strong>Giờ bắt đầu:</strong> <span id="start-time-display">${startTimeFormatted}</span></p>
+                        <p><strong>Đang chơi:</strong> <span id="playing-duration-display">0 giờ 0 phút</span></p>
+                        <p><strong>Thức ăn đã gọi:</strong></p>
+                        <ul>${foodList || '<li>Không có món nào</li>'}</ul>
+                        <button class="btn btn-danger mt-3" id="endTableBtn">
+                            <i class="fa-solid fa-stop"></i>&nbsp; Kết thúc và tính tiền
+                        </button>
+                    `;
+                        $("#table-detail-panel").html(detailHtml);
+
+                        // Bắt đầu chạy đồng hồ thời gian thực
+                        startPlayingTimer(startTime);
+
+                        // Gán sự kiện tăng/giảm/xoá món ăn
+                        $(".btn-increase").click(function () {
+                            const li = $(this).closest("li");
+                            const orderItemId = li.data("order-item-id");
+                            updateOrderItemQuantity(orderItemId, 1);
+                        });
+
+                        $(".btn-decrease").click(function () {
+                            const li = $(this).closest("li");
+                            const orderItemId = li.data("order-item-id");
+                            updateOrderItemQuantity(orderItemId, -1);
+                        });
+
+                        $(".btn-remove").click(function () {
+                            const li = $(this).closest("li");
+                            const orderItemId = li.data("order-item-id");
+
+                            if (confirm("Bạn có chắc muốn xóa món này?")) {
+                                $.ajax({
+                                    url: `http://localhost:8080/api/order-item/${orderItemId}`,
+                                    type: "DELETE",
+                                    headers: { Authorization: token },
+                                    success: function () {
+                                        li.remove();
+                                        showToastSuccess("Đã xoá món khỏi đơn hàng");
+                                    },
+                                    error: function () {
+                                        showToastError("Không thể xoá món");
+                                    }
+                                });
+                            }
+                        });
+                    },
+                    error: function () {
+                        $("#table-detail-panel").html(`<p>Lỗi khi tải món ăn đã gọi.</p>`);
+                    }
+                });
+            },
+            error: function () {
+                $("#table-detail-panel").html(`<p>Bàn đang trống hoặc có lỗi xảy ra.</p>`);
+            }
+        });
+    }
+
+    function loadMenuItems() {
+        $.ajax({
+            url: "http://localhost:8080/api/menu-item",
+            type: "GET",
+            headers: { Authorization: token },
+            success: function (items) {
+                let html = "";
+                items.forEach(item => {
+                    html += `
+                    <div class="col-md-3">
+                        <div class="menu-item-card" data-id="${item.id}" data-name="${item.name}" data-price="${item.price}">
+                            <strong>${item.name}</strong><br/>
+                            <span>${item.price.toLocaleString("vi-VN")} đ</span><br/>
+                            <input type="number" min="0" value="0" class="form-control quantity-input" placeholder="Số lượng">
+                        </div>
+                    </div>
+                `;
+                });
+                $("#menu-item-list").html(html);
+            },
+            error: function () {
+                $("#menu-item-list").html(`<p class="text-danger">Không thể tải menu món!</p>`);
+            }
+        });
+    }
+
+    function loadMenuItemManagement() {
+        $.ajax({
+            url: "http://localhost:8080/api/menu-item",
+            method: "GET",
+            headers: { Authorization: token },
+            success: function (items) {
+                const tbody = $("#menuItemListBody"); // <-- sửa lại đúng ID
+                tbody.empty();
+                items.forEach(item => {
+                    const row = `
+                <tr>
+                    <td>${item.id}</td>
+                    <td>${item.name}</td>
+                    <td>${item.category}</td>
+                    <td>${item.price.toLocaleString("vi-VN")}</td>
+                    <td>${item.stockQuantity}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning editItemBtn" data-id="${item.id}">Sửa</button>
+                        <button class="btn btn-sm btn-danger deleteItemBtn" data-id="${item.id}">Xóa</button>
+                    </td>
+                </tr>`;
+                    tbody.append(row);
+                });
+            },
+            error: function () {
+                showToastError("Lỗi khi tải danh sách món.");
+            }
+        });
+    }
+
+    function loadWorkingSessions(page) {
+        $.ajax({
+            url: `http://localhost:8080/api/working-session/paged?page=${page}&size=${pageSize}`,
+            method: 'GET',
+            success: function (data) {
+                const sessions = data.content;
+                const totalPages = data.totalPages;
+                const tbody = $('#workingSessionTableBody');
+                tbody.empty();
+
+                let totalCash = 0;
+
+                sessions.forEach(session => {
+                    totalCash += session.cashInSession;
+
+                    const start = formatDateTime(session.startTime);
+                    const end = session.endTime ? formatDateTime(session.endTime) : '<span class="text-danger">Đang hoạt động</span>';
+                    const row = `
+                        <tr>
+                            <td>${session.id}</td>
+                            <td>${session.staff?.username || 'Không rõ'}</td>
+                            <td>${start}</td>
+                            <td>${end}</td>
+                            <td>${formatCurrency(session.cashInSession)} đ</td>
+                        </tr>
+                    `;
+                    tbody.append(row);
+                });
+
+                $('#totalFundAmount').text(formatCurrency(totalCash) + ' đ');
+                renderPagination(totalPages, page);
+            },
+            error: function () {
+                showToastError('Không thể tải dữ liệu quỹ.');
+            }
+        });
+    }
+
+    /*** REGION 4 - Common functions - Vùng khai báo hàm dùng chung trong toàn bộ chương trình */
+    function formatDate(date) {
+        const d = new Date(date);
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        return `${year}-${month}-${day}`;
+    }
+
+    function formatDisplayDate(dateStr) {
+        const d = dayjs(dateStr.replace(" ", "T")).tz("Asia/Ho_Chi_Minh");
+        return d.format("DD/MM/YYYY");
+    }
+
+    function formatDisplayDateWithTime(dateStr) {
+        const d = dayjs(dateStr.replace(" ", "T")).tz("Asia/Ho_Chi_Minh");
+        return d.format("DD/MM/YYYY HH:mm");
+    }
+
+    function renderChart(labels, data) {
+        const formattedLabels = labels.map(label => {
+            const parts = label.split("-");
+            return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        });
+
+        const ctx = document.getElementById("revenueChart").getContext("2d");
+        if (revenueChart) revenueChart.destroy();
+        revenueChart = new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: formattedLabels,
+                datasets: [{
+                    label: "Doanh thu (VND)",
+                    data: data,
+                    backgroundColor: "#198754",
+                    borderRadius: 5,
+                }],
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function (value) {
+                                return value.toLocaleString("vi-VN") + " đ";
+                            },
+                        },
+                    },
+                },
+            },
+        });
+    }
+
+    function getPlayedHours(startTime, endTime) {
+        const start = dayjs(startTime);
+        const end = dayjs(endTime);
+        const durationInHours = end.diff(start, 'minute') / 60;
+        return parseFloat(durationInHours.toFixed(2));
+    }
+
+    function startPlayingTimer(startTime) {
+        if (playingTimerInterval) {
+            clearInterval(playingTimerInterval);
+        }
+
+        playingTimerInterval = setInterval(() => {
+            const now = dayjs();
+            const duration = now.diff(startTime, 'second');
+            const hours = Math.floor(duration / 3600);
+            const minutes = Math.floor((duration % 3600) / 60);
+            const seconds = duration % 60;
+
+            $("#playing-duration-display").text(`${hours} giờ ${minutes} phút ${seconds} giây`);
+        }, 1000);
+    }
+
+    function formatDateTime(dateTimeStr) {
+        const date = new Date(dateTimeStr);
+        const dd = String(date.getDate()).padStart(2, '0');
+        const mm = String(date.getMonth() + 1).padStart(2, '0');
+        const yyyy = date.getFullYear();
+        const hh = String(date.getHours()).padStart(2, '0');
+        const mi = String(date.getMinutes()).padStart(2, '0');
+        const ss = String(date.getSeconds()).padStart(2, '0');
+        return `${hh}:${mi}:${ss} ${dd}/${mm}/${yyyy}`;
+    }
+
+    function formatCurrency(value) {
+        return new Intl.NumberFormat('vi-VN').format(value);
+    }
+
+    function renderPagination(totalPages, activePage) {
+        const pagination = $('#pagination');
+        pagination.empty();
+
+        for (let i = 0; i < totalPages; i++) {
+            const li = $(`
+                <li class="page-item ${i === activePage ? 'active' : ''}">
+                    <a class="page-link" href="#">${i + 1}</a>
+                </li>
+            `);
+            li.click(() => {
+                currentPage = i;
+                loadWorkingSessions(currentPage);
+            });
+            pagination.append(li);
+        }
+    }
+
+    function updateOrderItemQuantity(orderItemId, delta) {
+        $.ajax({
+            url: `http://localhost:8080/api/order-item/${orderItemId}/update-quantity`,
+            type: "PUT",
+            contentType: "application/json",
+            data: JSON.stringify({ delta }),
+            headers: { Authorization: token },
+            success: function (updatedItem) {
+                const li = $(`li[data-order-item-id="${orderItemId}"]`);
+                if (updatedItem.quantity > 0) {
+                    li.find(".quantity").text(updatedItem.quantity);
+                    showToastSuccess("Cập nhật số lượng thành công");
+                } else {
+                    li.remove();
+                    showToastSuccess("Đã xoá món vì số lượng bằng 0");
+                }
+            },
+            error: function () {
+                showToastError("Không thể cập nhật số lượng");
+            }
+        });
+    }
+
+    function showToast(type, message) {
+        const icon = type === "success" ? "✅" : "❌";
+        const bgColor = type === "success" ? "bg-success" : "bg-danger";
+        const textColor = "text-white";
+
+        const toastId = `toast-${Date.now()}`;
+
+        const toastHtml = `
+            <div id="${toastId}" class="toast align-items-center ${bgColor} ${textColor}" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="3000" style="min-width: 350px; font-size: 1.1rem;">
+                <div class="d-flex">
+                    <div class="toast-body py-3 px-4">
+                        ${icon} ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-3 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        `;
+
+        $("#toast-container").append(toastHtml);
+        const toastElement = new bootstrap.Toast(document.getElementById(toastId));
+        toastElement.show();
+
+        $(`#${toastId}`).on("hidden.bs.toast", function () {
+            $(this).remove();
+        });
+    }
+
+
+    function showToastSuccess(message) {
+        showToast("success", message);
+    }
+
+    function showToastError(message) {
+        showToast("error", message);
+    }
+</script>
+
+</html>
